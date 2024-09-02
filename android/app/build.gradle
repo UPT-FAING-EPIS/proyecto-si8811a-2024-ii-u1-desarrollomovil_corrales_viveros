@@ -37,6 +37,28 @@ android {
             signingConfig = signingConfigs.debug
         }
     }
+
+    signingConfigs {
+        release {
+            if (project.hasProperty('keyProperties')) {
+                def keystoreProperties = new Properties()
+                def keystorePropertiesFile = rootProject.file('key.properties')
+                keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+
+                storeFile = file(keystoreProperties['storeFile'])
+                storePassword = keystoreProperties['storePassword']
+                keyAlias = keystoreProperties['keyAlias']
+                keyPassword = keystoreProperties['keyPassword']
+            }
+        }
+    }
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+            // Para habilitar el minify (proguard), descomenta la siguiente línea
+            // minifyEnabled true
+        }
+    }
 }
 
 flutter {
