@@ -1,40 +1,65 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_web_auth/flutter_web_auth.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // Para almacenar el token
-import 'listareventos.dart'; // Asegúrate de importar listareventos.dart
+import 'services/auth.dart';
+import 'screens/menu.dart';
 
-class LoginScreen extends StatefulWidget {
-  @override
-  _LoginScreenState createState() => _LoginScreenState();
+void main() {
+  runApp(const MyApp());
 }
 
-class _LoginScreenState extends State<LoginScreen> {
-  final String authorizationUrl = 'http://localhost:5000/login'; // URL de tu API Flask
-  final String redirectUri = 'com.yourapp://callback'; // URI de redirección
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
-  Future<void> _login() async {
-    final result = await FlutterWebAuth.authenticate(
-      url: authorizationUrl,
-      callbackUrlScheme: 'com.yourapp',
+  @override
+  Widget build(BuildContext context) {
+    final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+    return MaterialApp(
+      title: 'Flutter Demo',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        useMaterial3: true,
+      ),
+      navigatorKey: navigatorKey,
+      home: MyHomePage(
+          title: 'Flutter Demo Home Page', navigatorKey: navigatorKey),
     );
+  }
+}
 
-    // Extrae el token de acceso del resultado
-    final Uri resultUri = Uri.parse(result);
-    final String? accessToken = resultUri.queryParameters['access_token'];
+class MyHomePage extends StatefulWidget {
+  const MyHomePage(
+      {super.key, required this.title, required this.navigatorKey});
 
-    if (accessToken != null) {
-      // Guarda el token de acceso
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('access_token', accessToken);
+  final String title;
+  final GlobalKey<NavigatorState> navigatorKey;
 
-      // Navega a la pantalla de eventos
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => EventsListScreen()),
-      );
-    } else {
-      // Maneja el error si no se obtiene el token
-      print('Error: No se obtuvo el token de acceso');
+  @override
+  State<MyHomePage> createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  late final AuthService _authService;
+
+  @override
+  void initState() {
+    super.initState();
+    _authService = AuthService(widget.navigatorKey);
+    _authService.initialize();
+  }
+
+  void _login() async {
+    try {
+      final userName = await _authService.login();
+      if (userName != null) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => MenuScreen(userName: userName),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error during login: $e');
     }
   }
 
@@ -42,20 +67,15 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Login with Microsoft'),
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        title: Text(widget.title),
       ),
       body: Center(
         child: ElevatedButton(
           onPressed: _login,
-          child: Text('Login with Microsoft'),
+          child: const Text('Login with Azure'),
         ),
       ),
     );
   }
-}
-
-void main() {
-  runApp(MaterialApp(
-    home: LoginScreen(),
-  ));
 }
