@@ -5,12 +5,9 @@ import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 
 class AuthService {
   final GlobalKey<NavigatorState> navigatorKey;
-
-  AuthService(this.navigatorKey);
-
   late final AadOAuth oauth;
 
-  void initialize() {
+  AuthService(this.navigatorKey) {
     final config = Config(
       tenant: 'b6b466ee-468d-4011-b9fc-fbdcf82ac90a',
       clientId: '7b76e06c-55f8-4c8e-a576-c42f68be15c3',
@@ -23,6 +20,7 @@ class AuthService {
     oauth = AadOAuth(config);
   }
 
+  // Lógica de inicio de sesión
   Future<String?> login() async {
     try {
       await oauth.login();
@@ -34,8 +32,24 @@ class AuthService {
 
       return name ?? 'Usuario desconocido';
     } catch (e) {
-      print('Error during login: $e');
+      print('Error durante login: $e');
       return null;
+    }
+  }
+
+  // Lógica de cierre de sesión
+  Future<void> logout() async {
+    try {
+      // Si aad_oauth no tiene un método de logout, podrías necesitar implementar tu propio método
+      await oauth.logout(); // Verifica si este método existe en aad_oauth
+      print("Sesión cerrada exitosamente.");
+
+      // Redirige a la pantalla de inicio de sesión
+      if (navigatorKey.currentState != null) {
+        navigatorKey.currentState!.pushReplacementNamed('/login');
+      }
+    } catch (e) {
+      print('Error al cerrar sesión: $e');
     }
   }
 }

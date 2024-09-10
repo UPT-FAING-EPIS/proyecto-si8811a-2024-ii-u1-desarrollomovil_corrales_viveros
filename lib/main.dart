@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'services/auth.dart';
-import 'screens/menu.dart';
+import 'screens/menu.dart'; // Asegúrate de que esta importación sea correcta
 
 void main() {
   runApp(const MyApp());
@@ -21,14 +21,28 @@ class MyApp extends StatelessWidget {
       ),
       navigatorKey: navigatorKey,
       home: MyHomePage(
-          title: 'Flutter Demo Home Page', navigatorKey: navigatorKey),
+        title: 'Flutter Demo Home Page',
+        navigatorKey: navigatorKey,
+      ),
+      routes: {
+        '/login': (context) => MyHomePage(
+              title: 'Flutter Demo Home Page',
+              navigatorKey: navigatorKey,
+            ),
+        '/menu': (context) => MenuScreen(
+            userName:
+                'userName'), // Asegúrate de definir userName adecuadamente
+      },
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage(
-      {super.key, required this.title, required this.navigatorKey});
+  const MyHomePage({
+    super.key,
+    required this.title,
+    required this.navigatorKey,
+  });
 
   final String title;
   final GlobalKey<NavigatorState> navigatorKey;
@@ -39,27 +53,35 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   late final AuthService _authService;
+  String? userName;
 
   @override
   void initState() {
     super.initState();
     _authService = AuthService(widget.navigatorKey);
-    _authService.initialize();
   }
 
   void _login() async {
     try {
-      final userName = await _authService.login();
-      if (userName != null) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => MenuScreen(userName: userName),
-          ),
-        );
+      print('Iniciando sesión...');
+      final name = await _authService.login();
+      if (name != null) {
+        setState(() {
+          userName = name;
+        });
+        _navigateToMenu();
       }
     } catch (e) {
-      print('Error during login: $e');
+      print('Error durante el inicio de sesión: $e');
+    }
+  }
+
+  void _navigateToMenu() {
+    if (userName != null) {
+      Navigator.pushReplacementNamed(
+        context,
+        '/menu',
+      );
     }
   }
 
@@ -71,10 +93,20 @@ class _MyHomePageState extends State<MyHomePage> {
         title: Text(widget.title),
       ),
       body: Center(
-        child: ElevatedButton(
-          onPressed: _login,
-          child: const Text('Login with Azure'),
-        ),
+        child: userName == null
+            ? ElevatedButton(
+                onPressed: _login,
+                child: const Text('Login with Azure'),
+              )
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Bienvenido, $userName!',
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                ],
+              ),
       ),
     );
   }
