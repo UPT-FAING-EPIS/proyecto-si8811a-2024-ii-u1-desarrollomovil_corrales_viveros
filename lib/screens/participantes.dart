@@ -1,18 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:async';
 
 class Participante {
   final String id;
   final String nombre;
   final String detalle;
   final String equipoId;
+  String? nombreEquipo;
 
   Participante({
     required this.id,
     required this.nombre,
     required this.detalle,
     required this.equipoId,
+    this.nombreEquipo,
   });
 
   factory Participante.fromJson(Map<String, dynamic> json) {
@@ -35,11 +38,19 @@ class _ParticipantesScreenState extends State<ParticipantesScreen> {
   List<Participante> _participantesFiltrados = [];
   TextEditingController _searchController = TextEditingController();
   bool _isLoading = false;
+  Timer? _debounce;
 
   @override
   void initState() {
     super.initState();
     _fetchParticipantes();
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchParticipantes() async {
@@ -48,13 +59,12 @@ class _ParticipantesScreenState extends State<ParticipantesScreen> {
     });
 
     try {
-      final response = await http
-          .get(Uri.parse('http://161.132.37.95:8080/api/Participante'));
+      final response = await http.get(Uri.parse('http://161.132.37.95:8080/api/Participante'));
       if (response.statusCode == 200) {
         List jsonResponse = json.decode(response.body);
+        _participantes = jsonResponse.map((data) => Participante.fromJson(data)).toList();
+        await _fetchEquipoNames();
         setState(() {
-          _participantes =
-              jsonResponse.map((data) => Participante.fromJson(data)).toList();
           _participantesFiltrados = _participantes;
         });
       } else {
@@ -69,24 +79,66 @@ class _ParticipantesScreenState extends State<ParticipantesScreen> {
     }
   }
 
-  void _filterParticipantes(String query) {
-    setState(() {
-      if (query.isEmpty) {
-        _participantesFiltrados = _participantes;
-      } else {
-        _participantesFiltrados = _participantes
-            .where((participante) =>
-                participante.nombre
-                    .toLowerCase()
-                    .contains(query.toLowerCase()) ||
-                participante.detalle
-                    .toLowerCase()
-                    .contains(query.toLowerCase()) ||
-                participante.equipoId
-                    .toLowerCase()
-                    .contains(query.toLowerCase()))
-            .toList();
+  Future<void> _fetchEquipoNames() async {
+    for (var participante in _participantes) {
+      try {
+        final response = await http.get(Uri.parse('http://161.132.37.95:8080/api/Equipo/${participante.equipoId}'));
+        if (response.statusCode == 200) {
+          Map<String, dynamic> jsonResponse = json.decode(response.body);
+          participante.nombreEquipo = jsonResponse['nombre'];
+        } else {
+          participante.nombreEquipo = 'Equipo no encontrado';
+        }
+      } catch (e) {
+        print('Error fetching equipo name: $e');
+        participante.nombreEquipo = 'Error al cargar';
       }
+    }
+  }
+
+  Future<void> _searchParticipantes(String query) async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    if (query.isEmpty) {
+      setState(() {
+        _participantesFiltrados = _participantes;
+        _isLoading = false;
+      });
+      return;
+    }
+
+    try {
+      final response = await http.get(
+        Uri.parse('http://161.132.37.95:8080/api/Participante/search/$query'),
+        headers: {'accept': 'text/plain'},
+      );
+
+      if (response.statusCode == 200) {
+        List jsonResponse = json.decode(response.body);
+        _participantesFiltrados = jsonResponse.map((data) => Participante.fromJson(data)).toList();
+        await _fetchEquipoNames();
+        setState(() {});
+      } else {
+        throw Exception('Failed to search participantes');
+      }
+    } catch (e) {
+      print('Error: $e');
+      setState(() {
+        _participantesFiltrados = [];
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _onSearchChanged(String query) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      _searchParticipantes(query);
     });
   }
 
@@ -94,8 +146,7 @@ class _ParticipantesScreenState extends State<ParticipantesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Participantes',
-            style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text('Participantes', style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.red.shade800,
         elevation: 0,
       ),
@@ -126,59 +177,46 @@ class _ParticipantesScreenState extends State<ParticipantesScreen> {
                     icon: Icon(Icons.clear),
                     onPressed: () {
                       _searchController.clear();
-                      _filterParticipantes('');
+                      _searchParticipantes('');
                     },
                   ),
                 ),
-                onChanged: _filterParticipantes,
+                onChanged: _onSearchChanged,
               ),
             ),
             Expanded(
               child: _isLoading
-                  ? Center(
-                      child: CircularProgressIndicator(color: Colors.white))
+                  ? Center(child: CircularProgressIndicator(color: Colors.white))
                   : _participantesFiltrados.isEmpty
-                      ? Center(
-                          child: Text('No se encontraron participantes',
-                              style: TextStyle(color: Colors.white)))
+                      ? Center(child: Text('No se encontraron participantes', style: TextStyle(color: Colors.white)))
                       : ListView.builder(
                           itemCount: _participantesFiltrados.length,
                           itemBuilder: (context, index) {
                             final participante = _participantesFiltrados[index];
                             return Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 8),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                               child: Card(
                                 elevation: 5,
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(15)),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                                 child: Padding(
                                   padding: const EdgeInsets.all(16),
                                   child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Row(
                                         children: [
                                           CircleAvatar(
-                                            backgroundColor:
-                                                Colors.red.shade800,
+                                            backgroundColor: Colors.red.shade800,
                                             child: Text(
-                                              participante.nombre
-                                                  .substring(0, 1)
-                                                  .toUpperCase(),
-                                              style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.bold),
+                                              participante.nombre.substring(0, 1).toUpperCase(),
+                                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                                             ),
                                           ),
                                           SizedBox(width: 16),
                                           Expanded(
                                             child: Text(
                                               participante.nombre,
-                                              style: TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 18),
+                                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                                               overflow: TextOverflow.ellipsis,
                                             ),
                                           ),
@@ -187,16 +225,14 @@ class _ParticipantesScreenState extends State<ParticipantesScreen> {
                                       SizedBox(height: 8),
                                       Text(
                                         participante.detalle,
-                                        style: TextStyle(
-                                            color: Colors.grey.shade700),
+                                        style: TextStyle(color: Colors.grey.shade700),
                                         overflow: TextOverflow.ellipsis,
                                         maxLines: 2,
                                       ),
                                       SizedBox(height: 8),
                                       Text(
-                                        'Equipo ID: ${participante.equipoId}',
-                                        style: TextStyle(
-                                            color: Colors.grey.shade700),
+                                        'Equipo: ${participante.nombreEquipo ?? 'Cargando...'}',
+                                        style: TextStyle(color: Colors.grey.shade700),
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                     ],

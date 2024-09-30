@@ -5,6 +5,8 @@ import 'equipos.dart';
 import 'participantes.dart';
 import 'ubicaciones.dart';
 import '../services/auth.dart';
+import 'coordidocente.dart';
+import 'coordiestudiante.dart';
 
 class MenuScreen extends StatelessWidget {
   final String userName;
@@ -97,16 +99,28 @@ class MenuScreen extends StatelessWidget {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                      builder: (context) => ParticipantesScreen()),
+                  MaterialPageRoute(builder: (context) => ParticipantesScreen()),
                 );
               },
             ),
             ListTile(
-              leading: Icon(Icons.contact_mail),
-              title: Text('Contacto'),
+              leading: Icon(Icons.school),
+              title: Text('Coordinadores Docentes'),
               onTap: () {
-                // Implementa la navegación a ContactoScreen
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => CoordDocenteScreen()),
+                );
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.person),
+              title: Text('Coordinadores Estudiantes'),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => CoordEstudianteScreen()),
+                );
               },
             ),
           ],
@@ -136,6 +150,10 @@ class MenuScreen extends StatelessWidget {
                     Colors.orange.shade600, context, EquiposScreen()),
                 _buildCard('Participantes', 'lib/img/parti.png',
                     Colors.red.shade600, context, ParticipantesScreen()),
+                _buildCard('Coordinadores Docentes', 'lib/img/coordinador.png',
+                    Colors.purple.shade600, context, CoordDocenteScreen()),
+                _buildCard('Coordinadores Estudiantes', 'lib/img/coordinador.png',
+                    Colors.teal.shade600, context, CoordEstudianteScreen()),
               ],
             ),
           ),
@@ -156,13 +174,11 @@ class MenuScreen extends StatelessWidget {
   }
 
   Widget _buildCard(String title, String imagePath, Color color,
-      BuildContext context, Widget? destination) {
+      BuildContext context, Widget destination) {
     return GestureDetector(
       onTap: () {
-        if (destination != null) {
-          Navigator.push(
-              context, MaterialPageRoute(builder: (context) => destination));
-        }
+        Navigator.push(
+            context, MaterialPageRoute(builder: (context) => destination));
       },
       child: Container(
         decoration: BoxDecoration(
