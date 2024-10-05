@@ -61,12 +61,16 @@ El aplicativo móvil para los Juegos Florales es una solución innovadora que me
 
 ## Diagrama de Arquitectura
 ![Arquitectura](https://github.com/user-attachments/assets/81dc50a8-f548-4c9d-914a-73c57b63b5d7)
+La arquitectura de la aplicación móvil está organizada en módulos dentro de la carpeta `lib`, donde cada pantalla gestiona aspectos clave del evento, como el menú, eventos, ubicaciones, equipos y participantes. Además, hay módulos específicos para la coordinación de docentes y estudiantes. La aplicación también incluye servicios, como la autenticación y el archivo principal de inicio. Todo esto se conecta a varias APIs en la nube que gestionan la autenticación, eventos, ubicaciones, equipos y participantes, permitiendo una interacción fluida con datos externos.
 
 ## Diagrama de Componentes
 ![Componentes](https://github.com/user-attachments/assets/1fe9bc2e-0d0a-4d6f-9ac3-5229d9b50a7c)
+El diagrama de componentes presenta la arquitectura de la aplicación móvil y su conexión con apis en la nube. La aplicación se divide en varios módulos, cada uno con una funcionalidad específica. El Módulo de Autenticación gestiona el acceso de usuarios a la aplicación, mientras que el Módulo de Eventos se encarga de la administración de los eventos de los Juegos Florales. El Módulo de Ubicaciones proporciona información sobre los lugares donde se llevarán a cabo los eventos, y el Módulo de Equipos facilita la gestión de los equipos participantes. Además, el Módulo de Participantes organiza a los participantes, y existen módulos dedicados a los Coordinadores Docentes y Estudiantes. Con esto se permite una integración fluida entre la aplicación y las Apis para mantener los datos actualizados y centralizados.
 
 ## Diagrama de Casos de uso
 ![Diagrama de casos de uso](https://github.com/user-attachments/assets/385cddbd-daae-4ce2-acfa-e2dc0aeefb66)
+En este diagrama de casos de uso se pueden ver los requerimientos con los cumple la aplicación movil y con los que los usuarios van a poder observar y realizar dentro de la aplicación tales como iniciar sesión, visualizar informacion de los juegos florales, contactos, , eventos, participantes etc.
 
 ## Diagrama de Clases
 ![Topicos](https://github.com/user-attachments/assets/88af4503-31bd-4892-8454-27c6e5bb4a72)
+En el diagrama de clases, definimos los campos que vamos a utilizar para el desarrollo de la aplicacion, considerando que cuatro clases son las que van vinculadas con las API'S y las otras dos son clases que contienen campos con valores estáticos.
