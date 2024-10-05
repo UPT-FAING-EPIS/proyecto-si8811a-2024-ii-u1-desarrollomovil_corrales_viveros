@@ -10,9 +10,6 @@ class EventosScreen extends StatefulWidget {
 
 class _EventosScreenState extends State<EventosScreen> {
   late Future<List<Evento>> _eventos;
-  List<Evento> _eventosFiltrados = [];
-  TextEditingController _searchController = TextEditingController();
-  bool _isLoading = false;
 
   @override
   void initState() {
@@ -21,33 +18,41 @@ class _EventosScreenState extends State<EventosScreen> {
   }
 
   Future<List<Evento>> fetchEventos() async {
-    final response = await http.get(Uri.parse('http://161.132.48.189:9091/evento'));
+    final response =
+        await http.get(Uri.parse('http://161.132.48.189:9091/evento'));
 
     if (response.statusCode == 200) {
       List<dynamic> data = json.decode(response.body);
-      List<Evento> eventos = data.map((json) => Evento.fromJson(json)).toList();
-      _eventosFiltrados = eventos;
-      return eventos;
+      return data.map((json) => Evento.fromJson(json)).toList();
     } else {
       throw Exception('Failed to load eventos');
     }
   }
 
-  void _filterEventos(String query) {
-    setState(() {
-      if (query.isEmpty) {
-        _eventos.then((eventos) {
-          _eventosFiltrados = eventos;
-        });
-      } else {
-        _eventos.then((eventos) {
-          _eventosFiltrados = eventos
-              .where((evento) =>
-                  evento.nombre.toLowerCase().contains(query.toLowerCase()))
-              .toList();
-        });
-      }
-    });
+  void _showDescriptionDialog(String descripcion) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Descripción del Evento'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text(descripcion),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Cerrar'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -66,110 +71,94 @@ class _EventosScreenState extends State<EventosScreen> {
             colors: [Colors.blue.shade800, Colors.blue.shade200],
           ),
         ),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: 'Buscar eventos...',
-                  fillColor: Colors.white,
-                  filled: true,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(30),
-                    borderSide: BorderSide.none,
-                  ),
-                  prefixIcon: Icon(Icons.search),
-                  suffixIcon: IconButton(
-                    icon: Icon(Icons.clear),
-                    onPressed: () {
-                      _searchController.clear();
-                      _filterEventos('');
-                    },
-                  ),
-                ),
-                onChanged: _filterEventos,
-              ),
-            ),
-            Expanded(
-              child: FutureBuilder<List<Evento>>(
-                future: _eventos,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Center(child: CircularProgressIndicator(color: Colors.white));
-                  } else if (snapshot.hasError) {
-                    return Center(child: Text('Error: ${snapshot.error}', style: TextStyle(color: Colors.white)));
-                  } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return Center(child: Text('No se encontraron eventos', style: TextStyle(color: Colors.white)));
-                  } else {
-                    return ListView.builder(
-                      itemCount: _eventosFiltrados.length,
-                      itemBuilder: (context, index) {
-                        final evento = _eventosFiltrados[index];
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          child: Card(
-                            elevation: 5,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                            child: ListTile(
-                              contentPadding: EdgeInsets.all(16),
-                              title: Text(
-                                evento.nombre,
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                              ),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  SizedBox(height: 8),
-                                  Row(
-                                    children: [
-                                      Icon(Icons.calendar_today, size: 16, color: Colors.blue.shade800),
-                                      SizedBox(width: 8),
-                                      Text(
-                                        '${DateFormat('dd/MM/yyyy').format(evento.fechaInicio)} - ${DateFormat('dd/MM/yyyy').format(evento.fechaTermino)}',
-                                        style: TextStyle(color: Colors.grey.shade700),
-                                      ),
-                                    ],
-                                  ),
-                                  SizedBox(height: 4),
-                                  Row(
-                                    children: [
-                                      Icon(Icons.school, size: 16, color: Colors.blue.shade800),
-                                      SizedBox(width: 8),
-                                      Text(
-                                        evento.facultad,
-                                        style: TextStyle(color: Colors.grey.shade700),
-                                      ),
-                                    ],
-                                  ),
-                                  SizedBox(height: 8),
-                                  Row(
-                                    children: [
-                                      Icon(Icons.check_circle, size: 16, color: Colors.green.shade700),
-                                      SizedBox(width: 8),
-                                      Text(
-                                        'Resultado: ${evento.resultado == 'Vacio' ? 'Aún por verse' : evento.resultado}',
-                                        style: TextStyle(color: Colors.grey.shade700),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                              trailing: Icon(Icons.arrow_forward_ios, color: Colors.blue.shade800),
-                              onTap: () {
-                                // Aquí puedes agregar la navegación a los detalles del evento
-                              },
+        child: FutureBuilder<List<Evento>>(
+          future: _eventos,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Center(
+                  child: CircularProgressIndicator(color: Colors.white));
+            } else if (snapshot.hasError) {
+              return Center(
+                  child: Text('Error: ${snapshot.error}',
+                      style: TextStyle(color: Colors.white)));
+            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return Center(
+                  child: Text('No se encontraron eventos',
+                      style: TextStyle(color: Colors.white)));
+            } else {
+              final eventos = snapshot.data!;
+              return ListView.builder(
+                itemCount: eventos.length,
+                itemBuilder: (context, index) {
+                  final evento = eventos[index];
+                  return Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Card(
+                      elevation: 5,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15)),
+                      child: ListTile(
+                        contentPadding: EdgeInsets.all(16),
+                        title: Text(
+                          evento.nombre,
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 18),
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Icon(Icons.calendar_today,
+                                    size: 16, color: Colors.blue.shade800),
+                                SizedBox(width: 8),
+                                Text(
+                                  '${DateFormat('dd/MM/yyyy').format(evento.fechaInicio)} - ${DateFormat('dd/MM/yyyy').format(evento.fechaTermino)}',
+                                  style: TextStyle(color: Colors.grey.shade700),
+                                ),
+                              ],
                             ),
-                          ),
-                        );
-                      },
-                    );
-                  }
+                            SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Icon(Icons.school,
+                                    size: 16, color: Colors.blue.shade800),
+                                SizedBox(width: 8),
+                                Text(
+                                  evento.facultad,
+                                  style: TextStyle(color: Colors.grey.shade700),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Icon(Icons.check_circle,
+                                    size: 16, color: Colors.green.shade700),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Resultado: ${evento.resultado == 'Vacio' ? 'Aún por verse' : evento.resultado}',
+                                  style: TextStyle(color: Colors.grey.shade700),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        trailing: Icon(Icons.arrow_forward_ios,
+                            color: Colors.blue.shade800),
+                        onTap: () {
+                          _showDescriptionDialog(evento
+                              .descripcion); // Mostrar la descripción en el pop-up
+                        },
+                      ),
+                    ),
+                  );
                 },
-              ),
-            ),
-          ],
+              );
+            }
+          },
         ),
       ),
     );
@@ -183,6 +172,7 @@ class Evento {
   final DateTime fechaTermino;
   final String facultad;
   final String resultado;
+  final String descripcion;
 
   Evento({
     required this.id,
@@ -191,6 +181,7 @@ class Evento {
     required this.fechaTermino,
     required this.facultad,
     required this.resultado,
+    required this.descripcion,
   });
 
   factory Evento.fromJson(Map<String, dynamic> json) {
@@ -201,6 +192,7 @@ class Evento {
       fechaTermino: DateTime.parse(json['fechaTermino']),
       facultad: json['facultad'],
       resultado: json['resultado'],
+      descripcion: json['descripcion'],
     );
   }
 }
