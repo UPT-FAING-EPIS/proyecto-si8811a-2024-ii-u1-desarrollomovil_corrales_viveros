@@ -2,7 +2,7 @@
 - Corrales Solis, Moisés Alessandro
 - Viveros Blanco, Farley Eduardo
 - Poma Manchego, Rene Manuel
-- 
+  
 ## Descripción
 UPT Eventos es un aplicativo móvil diseñado para la gestión y presentación de Juegos Florales, abarcando disciplinas como canto, baile y declamación. Desarrollado en Dart utilizando Flutter, el sistema está basado en una arquitectura de microservicios para ofrecer escalabilidad y flexibilidad.
 
