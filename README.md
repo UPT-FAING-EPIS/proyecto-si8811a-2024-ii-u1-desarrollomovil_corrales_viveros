@@ -6,6 +6,9 @@
 ## Descripción
 UPT Eventos es un aplicativo móvil diseñado para la gestión y presentación de Juegos Florales, abarcando disciplinas como canto, baile y declamación. Desarrollado en Dart utilizando Flutter, el sistema está basado en una arquitectura de microservicios para ofrecer escalabilidad y flexibilidad.
 
+## Obtener APK
+https://appmovilflorales.blob.core.windows.net/apkjuegosflorales/JuegosFlorales.apk
+
 ## Características
 - Visualización de eventos universitarios
 - Información detallada de equipos y sus participantes
